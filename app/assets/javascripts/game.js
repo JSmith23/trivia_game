@@ -7,15 +7,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const GAME = {
     state: NOT_STARTED,
     questions: [],
-    currentQuestionIndex: -1
+    currentQuestionIndex: -1,
+    currentQuestion() {
+      return this.questions[this.currentQuestionIndex];
+    }
   };
 
   const START_GAME_FORM = document.getElementById("start_game_form");
   const QUESTION_FROM = document.getElementById("question_form");
+  const FAIL_VIEW = document.getElementById("fail_view");
+  const SUCCESS_VIEW = document.getElementById("success_view");
 
   const STATE_VIEW_MAP = {
     [NOT_STARTED]: START_GAME_FORM,
-    [STARTED]: QUESTION_FROM
+    [STARTED]: QUESTION_FROM,
+    [FAILED]: FAIL_VIEW,
+    [FINISHED]: SUCCESS_VIEW
   };
 
   function buildAnswerRadioButton(answer, index) {
@@ -24,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
     input.id = `question_answer_${index}`;
     input.setAttribute("type", "radio");
     input.setAttribute("value", answer);
+    input.setAttribute("name", "answer");
     const label = document.createElement("label");
     label.setAttribute("for", input.id);
     label.innerHTML = answer;
@@ -38,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       GAME.currentQuestionIndex++;
     }
-    const currentQuestion = GAME.questions[GAME.currentQuestionIndex];
+    const currentQuestion = GAME.currentQuestion();
     QUESTION_FROM.querySelector("#question_category").innerText =
       currentQuestion.category;
     QUESTION_FROM.querySelector("#question_difficulty").innerText =
@@ -54,9 +62,10 @@ document.addEventListener("DOMContentLoaded", () => {
       .map((a, i) => buildAnswerRadioButton(a, i))
       .forEach(radioButton => answers.appendChild(radioButton));
   }
+
   function showCurrentStateView() {
     document
-      .querySelectorAll(".game-form")
+      .querySelectorAll(".game-view")
       .forEach(form => form.classList.add("hidden"));
     STATE_VIEW_MAP[GAME.state].classList.remove("hidden");
   }
@@ -66,6 +75,11 @@ document.addEventListener("DOMContentLoaded", () => {
     GAME.state = STARTED;
     showCurrentStateView();
     fillQuestionFormWithNext();
+  }
+
+  function failTheGame() {
+    GAME.state = FAILED;
+    showCurrentStateView();
   }
 
   function getStartGameFormParams() {
@@ -81,5 +95,17 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch("/api/v1/questions?" + serialize(getStartGameFormParams()))
       .then(response => response.json())
       .then(json => startGameWith(json.data.attributes.questions));
+  });
+  QUESTION_FROM.addEventListener("submit", e => {
+    e.preventDefault();
+
+    const answerValue = QUESTION_FROM.querySelector('[name="answer"]:checked')
+      .value;
+    const currentQuestion = GAME.currentQuestion();
+    if (currentQuestion.correct_answer === answerValue) {
+      alert("Anwer is correct");
+    } else {
+      failTheGame();
+    }
   });
 });
