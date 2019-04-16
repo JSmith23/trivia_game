@@ -18,6 +18,42 @@ document.addEventListener("DOMContentLoaded", () => {
     [STARTED]: QUESTION_FROM
   };
 
+  function buildAnswerRadioButton(answer, index) {
+    const wrapper = document.createElement("div");
+    const input = document.createElement("input");
+    input.id = `question_answer_${index}`;
+    input.setAttribute("type", "radio");
+    input.setAttribute("value", answer);
+    const label = document.createElement("label");
+    label.setAttribute("for", input.id);
+    label.innerHTML = answer;
+    wrapper.appendChild(input);
+    wrapper.appendChild(label);
+    return wrapper;
+  }
+
+  function fillQuestionFormWithNext() {
+    if (GAME.currentQuestionIndex < 0) {
+      GAME.currentQuestionIndex = 0;
+    } else {
+      GAME.currentQuestionIndex++;
+    }
+    const currentQuestion = GAME.questions[GAME.currentQuestionIndex];
+    QUESTION_FROM.querySelector("#question_category").innerText =
+      currentQuestion.category;
+    QUESTION_FROM.querySelector("#question_difficulty").innerText =
+      currentQuestion.difficulty;
+    QUESTION_FROM.querySelector("#question_question").innerHTML =
+      currentQuestion.question;
+    const answers = QUESTION_FROM.querySelector("#question_answers");
+
+    const shufledAnswers = shuffle(
+      currentQuestion.incorrect_answer.concat([currentQuestion.correct_answer])
+    );
+    shufledAnswers
+      .map((a, i) => buildAnswerRadioButton(a, i))
+      .forEach(radioButton => answers.appendChild(radioButton));
+  }
   function showCurrentStateView() {
     document
       .querySelectorAll(".game-form")
@@ -28,8 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function startGameWith(questions) {
     GAME.questions = questions;
     GAME.state = STARTED;
-    GAME.currentQuestionIndex = 0;
     showCurrentStateView();
+    fillQuestionFormWithNext();
   }
 
   function getStartGameFormParams() {
