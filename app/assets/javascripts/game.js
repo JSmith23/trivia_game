@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const STARTED = "STARTED";
   const FAILED = "FAILED";
   const FINISHED = "FINISHED";
+  const NO_QUESTIONS = "NO_QUESTIONS";
 
   const GAME = {
     state: NOT_STARTED,
@@ -17,12 +18,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const QUESTION_FROM = document.getElementById("question_form");
   const FAIL_VIEW = document.getElementById("fail_view");
   const SUCCESS_VIEW = document.getElementById("success_view");
+  const NO_QUESTIONS_VIEW = document.getElementById("no_questions_view");
 
   const STATE_VIEW_MAP = {
     [NOT_STARTED]: START_GAME_FORM,
     [STARTED]: QUESTION_FROM,
     [FAILED]: FAIL_VIEW,
-    [FINISHED]: SUCCESS_VIEW
+    [FINISHED]: SUCCESS_VIEW,
+    [NO_QUESTIONS]: NO_QUESTIONS_VIEW
   };
 
   function buildAnswerRadioButton(answer, index) {
@@ -54,7 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
     QUESTION_FROM.querySelector("#question_question").innerHTML =
       currentQuestion.question;
     const answers = QUESTION_FROM.querySelector("#question_answers");
-
+    while (answers.firstChild) {
+      answers.removeChild(answers.firstChild);
+    }
     const shufledAnswers = shuffle(
       currentQuestion.incorrect_answer.concat([currentQuestion.correct_answer])
     );
@@ -71,6 +76,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function startGameWith(questions) {
+    if (!questions || !questions.length) {
+      GAME.state = NO_QUESTIONS;
+      showCurrentStateView();
+      return;
+    }
     GAME.questions = questions;
     GAME.state = STARTED;
     showCurrentStateView();
@@ -80,6 +90,19 @@ document.addEventListener("DOMContentLoaded", () => {
   function failTheGame() {
     GAME.state = FAILED;
     showCurrentStateView();
+  }
+
+  function finishTheGame() {
+    GAME.state = FINISHED;
+    showCurrentStateView();
+  }
+
+  function handleCorrentAnswer() {
+    if (GAME.currentQuestionIndex >= GAME.questions.length - 1) {
+      finishTheGame();
+    } else {
+      fillQuestionFormWithNext();
+    }
   }
 
   function getStartGameFormParams() {
@@ -103,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .value;
     const currentQuestion = GAME.currentQuestion();
     if (currentQuestion.correct_answer === answerValue) {
-      alert("Anwer is correct");
+      handleCorrentAnswer();
     } else {
       failTheGame();
     }
